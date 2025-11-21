@@ -21,7 +21,7 @@ let currentIndex = 0;
 async function initPlayer() {  
     try {  
         console.log('正在请求歌单...');  
-        const res = await fetch(`$${API_BASE}/api/playlist?id=$${PLAYLIST_ID}`);  
+        const res = await fetch(API_BASE + '/api/playlist?id=' + PLAYLIST_ID);  
         const data = await res.json();  
   
         // 解析逻辑：适配标准网易云API结构  
@@ -61,40 +61,77 @@ function loadUI(song) {
     cover.src = song.cover;  
 }  
   
-// 3. 播放核心逻辑：获取 MP3 链接  
+// 3. 播放核心逻辑  
 async function playMusic() {  
     const song = songList[currentIndex];  
       
-    // UI 切换为加载状态  
-    loadUI(song);  
+    // 这是一个优化的体验：在请求音频前，先显示列表里已有的基本信息（如歌名）  
+    // loadUI(song);   
       
     try {  
-        // 请求歌曲详情接口获取真实 URL  
-        const res = await fetch(`$${API_BASE}/api/song?id=$${song.id}`);  
-        const data = await res.json();  
+        console.log(`正在请求歌曲: $${song.name} (ID: $${song.id})`);  
           
-        // 通常结构是 data.data[0].url  
-        const playUrl = data.data[0].url;  
+        // 发送请求  
+        const res = await fetch(API_BASE + '/api/song?id=' + song.id);  
+        const data = await res.json();  
+  
+        // ================== 核心修改区域开始 ==================  
+          
+        // 1. 获取 MP3 播放链接  
+        // 根据你提供的 JSON，链接在 data.url.url  
+        const playUrl = data.url ? data.url.url : null;  
   
         if (!playUrl) {  
-            console.warn("该歌曲无版权或VIP限制，自动跳下一首");  
-            nextMusic();  
+            console.warn("无法获取播放链接（可能是VIP歌曲或无版权），自动跳下一首");  
+            nextMusic(); // 自动切歌  
             return;  
         }  
   
-        // 只有当URL改变时才重置src，避免重复加载  
+        // 2. 获取更详细的歌曲信息（可选，用于更新高清封面）  
+        // 根据你提供的 JSON，详情在 data.detail.songs[0]  
+        if (data.detail && data.detail.songs && data.detail.songs[0]) {  
+            const detail = data.detail.songs[0];  
+              
+            // 更新界面显示（使用高清封面）  
+            title.innerText = detail.name;  
+            artist.innerText = detail.artists[0].name;  
+            cover.src = detail.album.picUrl;  
+              
+            // 某些浏览器需要这就话来触发封面旋转动画  
+            if ('mediaSession' in navigator) {  
+                navigator.mediaSession.metadata = new MediaMetadata({  
+                    title: detail.name,  
+                    artist: detail.artists[0].name,  
+                    artwork: [{ src: detail.album.picUrl, sizes: '300x300', type: 'image/jpeg' }]  
+                });  
+            }  
+        }  
+          
+        // ================== 核心修改区域结束 ==================  
+  
+        // 只有当URL改变时才重置src  
         if(audio.src !== playUrl) {  
             audio.src = playUrl;  
         }  
           
-        audio.play();  
-        playerContainer.classList.add('playing');  
-        playBtn.innerHTML = '<i class="fas fa-pause"></i>';  
+        // 播放  
+        const playPromise = audio.play();  
+        if (playPromise !== undefined) {  
+            playPromise  
+                .then(() => {  
+                    // 播放成功  
+                    playerContainer.classList.add('playing');  
+                    playBtn.innerHTML = '<i class="fas fa-pause"></i>';  
+                })  
+                .catch(error => {  
+                    console.error("自动播放被浏览器拦截，需要用户点击:", error);  
+                });  
+        }  
   
     } catch (err) {  
-        console.error("获取歌曲URL失败:", err);  
+        console.error("播放请求失败:", err);  
     }  
-}  
+}
   
 // 暂停  
 function pauseMusic() {  
@@ -145,3 +182,4 @@ progressContainer.addEventListener('click', setProgress);
   
 // 启动！  
 initPlayer();  
+
