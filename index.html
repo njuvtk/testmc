@@ -1,0 +1,38 @@
+<!DOCTYPE html>  
+<html lang="zh-CN">  
+<head>  
+    <meta charset="UTF-8">  
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">  
+    <title>我的云音乐</title>  
+    <!-- 关键：绕过网易云防盗链，否则图片和MP3加载失败 -->  
+    <meta name="referrer" content="no-referrer">  
+    <link rel="stylesheet" href="style.css">  
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">  
+</head>  
+<body>  
+    <div class="player-container">  
+        <div class="cover-wrapper">  
+            <img src="https://via.placeholder.com/300" alt="封面" id="cover">  
+        </div>  
+        <div class="info">  
+            <h2 id="title">加载中...</h2>  
+            <h3 id="artist">Wait a moment</h3>  
+        </div>  
+          
+        <div class="progress-area" id="progress-container">  
+            <div class="progress-bar" id="progress"></div>  
+        </div>  
+  
+        <div class="controls">  
+            <button id="prev" class="btn"><i class="fas fa-step-backward"></i></button>  
+            <button id="play" class="btn main-btn"><i class="fas fa-play"></i></button>  
+            <button id="next" class="btn"><i class="fas fa-step-forward"></i></button>  
+        </div>  
+          
+        <!-- 隐藏的播放器 -->  
+        <audio id="audio"></audio>  
+    </div>  
+  
+    <script src="script.js"></script>  
+</body>  
+</html>  
